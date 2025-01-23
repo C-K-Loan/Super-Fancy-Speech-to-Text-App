@@ -1,9 +1,5 @@
 import { instrument } from "@fiberplane/hono-otel";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
 import { Hono } from "hono";
-import { users } from "./db/schema";
-import { eq } from "drizzle-orm";
 import { AssemblyAI } from 'assemblyai';
 import { Buffer } from "buffer";
 
@@ -166,7 +162,7 @@ app.get("/", (c) => {
 
 app.post("/api/transcribe", async (c) => {
   const client = new AssemblyAI({
-    apiKey: '', // DO NOT REMOVE API KEY
+    apiKey: 'YOU API KEY', // Ensure your API key is correct and valid
   });
 
   try {
@@ -178,7 +174,7 @@ app.post("/api/transcribe", async (c) => {
     const uploadRes = await fetch('https://api.assemblyai.com/v2/upload', {
       method: 'POST',
       headers: {
-        authorization: '', // Same API key here
+        authorization: 'a9f042d40c4342fd9eb86a151a1446aa', // Use your AssemblyAI API key here
         'content-type': 'application/octet-stream'
       },
       body: buffer
@@ -204,46 +200,5 @@ app.post("/api/transcribe", async (c) => {
   }
 });
 
-// Existing CRUD routes
-app.get("/api/users", async (c) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const db = drizzle(sql);
-  const usersList = await db.select().from(users);
-  return c.json({ users: usersList });
-});
-
-app.get("/api/users/:id", async (c) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const db = drizzle(sql);
-  const id = Number.parseInt(c.req.param("id"), 10);
-  const [user] = await db.select().from(users).where(eq(users.id, id));
-  if (!user) return c.json({ error: "User not found" }, 404);
-  return c.json(user);
-});
-
-app.post("/api/users", async (c) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const db = drizzle(sql);
-  const newUser = await c.req.json();
-  const insertedUser = await db.insert(users).values(newUser).returning();
-  return c.json(insertedUser, 201);
-});
-
-app.put("/api/users/:id", async (c) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const db = drizzle(sql);
-  const id = Number.parseInt(c.req.param("id"), 10);
-  const updatedData = await c.req.json();
-  const updatedUser = await db.update(users).set(updatedData).where(eq(users.id, id)).returning();
-  return c.json(updatedUser);
-});
-
-app.delete("/api/users/:id", async (c) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const db = drizzle(sql);
-  const id = Number.parseInt(c.req.param("id"), 10);
-  await db.delete(users).where(eq(users.id, id));
-  return c.json({ message: "User deleted" });
-});
 
 export default instrument(app);
